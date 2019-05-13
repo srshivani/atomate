@@ -15,7 +15,6 @@ from fireworks import Workflow, Firework
 from pymatgen.io.vasp.sets import MPRelaxSet, MVLScanRelaxSet
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
-from atomate.vasp.powerups import add_modify_incar
 from atomate.utils.utils import get_logger
 from atomate.vasp.fireworks.core import OptimizeFW, StaticFW, HSEBSFW, DFPTFW
 from atomate.vasp.firetasks.glue_tasks import CopyVaspOutputs
@@ -34,14 +33,14 @@ def get_wf_chg_defects(structure, name="chg_defect_wf", user_incar_settings={},
     """
     Returns a charged defect workflow
 
-    Firework 0 : (optional) re-relax the bulk structure that is input before running rest of workflow
-    Firework 1 : (optional) run hybrid calculation of bulk structure to allow for
-    Firework 2 : bulk supercell calculation
-    Firework 3 : (optional) dielectric calculation
-    Firework 4 - len(defectcalcs): Optimize the internal structure (fixed volume)
+    Firework 0 : (optional) relaxation of the given bulk structure before running rest of workflow
+    Firework 1 : (optional) run hybrid calculation of bulk structure to allow for band edge realignment
+                            with respect to hybrid band edges.
+    Firework 2 : (optional) dielectric calculation
+    Firework 3 : DefectSetupFiretask for setting up all bulk and defect supercell calculations
+    Firework 4 : bulk supercell calculation
+    Firework 5 - len(defectcalcs): Optimize the internal structure (fixed volume)
                                    of each charge+defect combination.
-
-    (note if no re-relaxation required, then 1-len(defectcalcs) will all run at same time...)
 
     Args:
         structure (Structure): input structure to have defects run on

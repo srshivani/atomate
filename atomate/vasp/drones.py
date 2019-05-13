@@ -20,7 +20,6 @@ import traceback
 from monty.io import zopen
 from monty.json import jsanitize
 from monty.os.path import which
-from monty.shutil import decompress_file
 
 import numpy as np
 
@@ -29,8 +28,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.core.operations import SymmOp
 from pymatgen.electronic_structure.bandstructure import BandStructureSymmLine
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.io.vasp import BSVasprun, Vasprun, Outcar, Locpot, Chgcar, \
-    parse_defect_states, Procar, Wavecar
+from pymatgen.io.vasp import BSVasprun, Vasprun, Outcar, Locpot, Chgcar
 from pymatgen.io.vasp.inputs import Poscar, Potcar, Incar, Kpoints
 from pymatgen.apps.borg.hive import AbstractDrone
 from pymatgen.command_line.bader_caller import bader_analysis_from_path
@@ -109,10 +107,10 @@ class VaspDrone(AbstractDrone):
             parse_bader (bool): Run and parse Bader charge data. Defaults to True if Bader is present
             parse_chgcar (bool): Run and parse CHGCAR file
             parse_aeccar (bool): Run and parse AECCAR0 and AECCAR2 files
-            defect_wf_parsing (Site): If Site is provided, drone considers Procar and
-                Wavecar parsing relative to the position of Site.
-                 Useful for consideration of defect localization
-                Defaults to None (no extra procar or wavecar parsing occurs)
+            defect_wf_parsing (Site): A Site object representing the position of a point defect site.
+                If provided, the drone stores additional
+                useful information for consideration of defect localization
+                Defaults to None (no defect related parsing occurs)
         """
         self.parse_dos = parse_dos
         self.additional_fields = additional_fields or {}
@@ -220,25 +218,8 @@ class VaspDrone(AbstractDrone):
 
             # store defect localization/band filling information
             if self.defect_wf_parsing:
-                # need to make sure all procars and wavecars are zipped
-                for propat in self.filter_files(fullpath, file_pattern="PROCAR").values():
-                    decompress_file(os.path.join(fullpath, propat))
-                for wavepat in self.filter_files(fullpath, file_pattern="WAVECAR").values():
-                    decompress_file(os.path.join(fullpath, wavepat))
-                procar_paths = [os.path.join(fullpath, ppath) for ppath in
-                                self.filter_files(fullpath, file_pattern="PROCAR").values()]
-                wavecar_paths = [os.path.join(fullpath, wpath) for wpath in
-                                 self.filter_files(fullpath, file_pattern="WAVECAR").values()]
-
                 for i, d_calc in enumerate(d["calcs_reversed"]):
                     if d_calc.get("output"):
-                        if len(procar_paths) and len(wavecar_paths):
-                            procar = Procar(procar_paths[i])
-                            wavecar = Wavecar(wavecar_paths[i])
-                            structure = Structure.from_dict(d_calc["output"]["structure"])
-                            defect_data = parse_defect_states(structure, self.defect_wf_parsing, wavecar, procar)
-                            d_calc["output"].update({"defect": defect_data})
-
                         filename = list(vasprun_files.values())[i]
                         vasprun_file = os.path.join(dir_name, filename)
                         vrun = Vasprun(vasprun_file)

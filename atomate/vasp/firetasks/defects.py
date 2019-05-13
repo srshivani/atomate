@@ -3,31 +3,19 @@
 from __future__ import division, print_function, unicode_literals, absolute_import
 
 """
-This module provides ability to setup and parse defects on fly...
-Note alot of this structure is taken from pycdt.utils.parse_calculations and pycdt.......
-
-Requirements:
- - bulk calculation is finished (and vasprun.xml + Locpot)
- - a dielectric constant/tensor is provided
- - defect+chg calculation is finished 
-
- Soft requirements:
- 	- Bulk and defect OUTCAR files (if charge correction by Kumagai et al. is desired)
- 	- Hybrid bulk bandstructure / simple bulk structure calculation (if bandshifting is desired)
+This module provides ability to setup and parse point defect calculations.
+Note much of this code is taken from pycdt.utils.parse_calculations 
+in the Python Charged Defect Toolkit (PyCDT), with permission from the authors.
 """
 
 import os
 import itertools
 import numpy as np
 
-from monty.json import jsanitize
-
 from pymatgen.io.vasp import Vasprun, Locpot, Poscar
-from pymatgen import MPRester
 from pymatgen.core import Structure
 from pymatgen.io.vasp.sets import MPRelaxSet, MVLScanRelaxSet
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
-from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.analysis.defects.generators import VacancyGenerator, SubstitutionGenerator, \
     InterstitialGenerator, VoronoiInterstitialGenerator, SimpleChargeGenerator
 
@@ -36,21 +24,18 @@ from fireworks import FiretaskBase, FWAction, explicit_serialize
 from atomate.utils.utils import get_logger
 from atomate.vasp.fireworks.core import TransmuterFW
 
-from monty.serialization import dumpfn
-from monty.json import MontyEncoder
-
 logger = get_logger(__name__)
 
 def optimize_structure_sc_scale(inp_struct, final_site_no):
     """
-    A function for finding optimal supercell transformation
+    A function for determining an optimal supercell transformation
     by maximizing the nearest image distance with the number of
     atoms remaining less than final_site_no
 
     Args:
         inp_struct: input pymatgen Structure object
         final_site_no (float or int): maximum number of atoms
-        for final supercell
+                                      for final supercell
 
     Returns:
         3 x 1 array for supercell transformation
@@ -96,7 +81,7 @@ def optimize_structure_sc_scale(inp_struct, final_site_no):
 @explicit_serialize
 class DefectSetupFiretask(FiretaskBase):
     """
-    Run defect supercell setup
+    Run point defect supercell setup
 
     Args:
         structure (Structure): input structure to have defects run on
@@ -367,12 +352,16 @@ def get_fw_from_defect( defect, supercell_size, user_kpoints_settings = {},
                         user_incar_settings = {},
                         db_file='>>db_file<<', vasp_cmd='>>vasp_cmd<<'):
     """
-    Simple function for grabbing fireworks for a defect, given a supercell_size
-    :param defect:
-    :param supercell_size:
-    :param user_kpoints_settings:
-    :param db_file:
-    :param vasp_cmd:
+    Simple function for retrieving a relaxation Firework for a single defect + charge combination,
+        given a supercell_size.
+    Makes use of the DefectTransformation from pymatgen within a Transformation FW.
+
+    :param defect: Defect object from pymatgen (Vacancy, Substitution, or Interstitial) with charge associated.
+    :param supercell_size: Supercell transformation to use for structure (float, 1 x 3 array, or 3 x 3 array)
+    :param user_kpoints_settings: input dictionary for kpoint settings.
+    :param user_incar_settings: input dictionary for incar settings.
+    :param db_file: database file path to use for Firework
+    :param vasp_cmd: vasp command to use for Firework
     :return:
     """
     chgd_sc_struct = defect.generate_defect_structure(supercell=supercell_size)
