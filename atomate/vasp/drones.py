@@ -83,8 +83,7 @@ class VaspDrone(AbstractDrone):
 
     def __init__(self, runs=None, parse_dos="auto", bandstructure_mode="auto",
                  parse_locpot=True, additional_fields=None, use_full_uri=True,
-                 parse_bader=bader_exe_exists, parse_chgcar=False, parse_aeccar=False,
-                 defect_wf_parsing=None):
+                 parse_bader=bader_exe_exists, parse_chgcar=False, parse_aeccar=False):
         """
         Initialize a Vasp drone to parse vasp outputs
         Args:
@@ -122,7 +121,6 @@ class VaspDrone(AbstractDrone):
         self.parse_bader = parse_bader
         self.parse_chgcar = parse_chgcar
         self.parse_aeccar = parse_aeccar
-        self.defect_wf_parsing = defect_wf_parsing
 
     def assimilate(self, path):
         """
@@ -216,6 +214,7 @@ class VaspDrone(AbstractDrone):
                 logger.error("Bad run stats for {}.".format(fullpath))
             d["run_stats"] = run_stats
 
+<<<<<<< HEAD
             # store defect localization/band filling information
             if self.defect_wf_parsing:
                 for i, d_calc in enumerate(d["calcs_reversed"]):
@@ -228,6 +227,8 @@ class VaspDrone(AbstractDrone):
                         vr_eigenvalue_dict = {'eigenvalues': eigenvalues, 'kpoint_weights': kpoint_weights}
                         d_calc["output"].update({"vr_eigenvalue_dict": vr_eigenvalue_dict})
 
+=======
+>>>>>>> mp/master
             # reverse the calculations data order so newest calc is first
             d["calcs_reversed"].reverse()
 
@@ -653,7 +654,7 @@ class VaspDrone(AbstractDrone):
             else:
                 diff = v.difference(set(d.get(k, d).keys()))
             if diff:
-                logger.warn("The keys {0} in {1} not set".format(diff, k))
+                logger.warning("The keys {0} in {1} not set".format(diff, k))
 
     def get_valid_paths(self, path):
         """
