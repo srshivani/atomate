@@ -214,7 +214,6 @@ class VaspDrone(AbstractDrone):
                 logger.error("Bad run stats for {}.".format(fullpath))
             d["run_stats"] = run_stats
 
-<<<<<<< HEAD
             # store defect localization/band filling information
             if self.defect_wf_parsing:
                 for i, d_calc in enumerate(d["calcs_reversed"]):
@@ -227,8 +226,6 @@ class VaspDrone(AbstractDrone):
                         vr_eigenvalue_dict = {'eigenvalues': eigenvalues, 'kpoint_weights': kpoint_weights}
                         d_calc["output"].update({"vr_eigenvalue_dict": vr_eigenvalue_dict})
 
-=======
->>>>>>> mp/master
             # reverse the calculations data order so newest calc is first
             d["calcs_reversed"].reverse()
 
